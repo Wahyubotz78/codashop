@@ -1,0 +1,150 @@
+local ownerId = [GANTI PAKAI ID ROBLOX OWNER]
+local Players = game:GetService("Players")
+local DataStoreService = game:GetService("DataStoreService")
+local summitStore = DataStoreService:GetDataStore("SummitData")
+
+local function getRank(summitCount)
+	if summitCount >= 1000 then
+		return "Legenda Abadi", Color3.fromRGB(255, 250, 250)
+	elseif summitCount >= 500 then
+		return "Dewa Gunung", Color3.fromRGB(255, 69, 0)
+	elseif summitCount >= 300 then
+		return "Pendaki Titan", Color3.fromRGB(255, 223, 0)
+	elseif summitCount >= 200 then
+		return "Pendaki Dewa", Color3.fromRGB(0, 191, 255)
+	elseif summitCount >= 150 then
+		return "Pendaki Legenda+", Color3.fromRGB(138, 43, 226)
+	elseif summitCount >= 100 then
+		return "Pendaki Legenda", Color3.fromRGB(255, 0, 0)
+	elseif summitCount >= 75 then
+		return "Pendaki Juara", Color3.fromRGB(255, 20, 147)
+	elseif summitCount >= 50 then
+		return "Pendaki Elite", Color3.fromRGB(255, 215, 0)
+	elseif summitCount >= 40 then
+		return "Pendaki Master", Color3.fromRGB(255, 255, 0)
+	elseif summitCount >= 30 then
+		return "Pendaki Legendaris", Color3.fromRGB(255, 140, 0)
+	elseif summitCount >= 25 then
+		return "Pendaki Veteran", Color3.fromRGB(0, 0, 139)
+	elseif summitCount >= 20 then
+		return "Pendaki Pemandu", Color3.fromRGB(0, 128, 0)
+	elseif summitCount >= 16 then
+		return "Pendaki Handal", Color3.fromRGB(60, 179, 113)
+	elseif summitCount >= 13 then
+		return "Pendaki Ahli", Color3.fromRGB(0, 255, 255)
+	elseif summitCount >= 10 then
+		return "Pendaki Terampil", Color3.fromRGB(30, 144, 255)
+	elseif summitCount >= 7 then
+		return "Pendaki Menengah", Color3.fromRGB(135, 206, 250)
+	elseif summitCount >= 5 then
+		return "Pendaki Junior", Color3.fromRGB(173, 216, 230)
+	elseif summitCount >= 3 then
+		return "Pendaki Magang", Color3.fromRGB(192, 192, 192)
+	elseif summitCount >= 1 then
+		return "Pendaki Pemula", Color3.fromRGB(211, 211, 211)
+	else
+		return "Pendaki", Color3.fromRGB(255, 255, 255)
+	end
+end
+
+Players.PlayerAdded:Connect(function(player)
+	-- Buat leaderstats Folder
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if not leaderstats then
+		leaderstats = Instance.new("Folder")
+		leaderstats.Name = "leaderstats"
+		leaderstats.Parent = player
+	end
+
+	-- Buat summitStat IntValue
+	local summitStat = leaderstats:FindFirstChild("Summit")
+	if not summitStat then
+		summitStat = Instance.new("IntValue")
+		summitStat.Name = "Summit"
+		summitStat.Parent = leaderstats
+	end
+
+	-- Load data Summit dari DataStore
+	local success, data = pcall(function()
+		return summitStore:GetAsync(tostring(player.UserId))
+	end)
+	if success and data then
+		summitStat.Value = data
+	else
+		summitStat.Value = 0
+	end
+
+	-- Save data Summit ke DataStore setiap kali berubah
+	summitStat:GetPropertyChangedSignal("Value"):Connect(function()
+		local saveSuccess, err = pcall(function()
+			summitStore:SetAsync(tostring(player.UserId), summitStat.Value)
+		end)
+		if not saveSuccess then
+			warn("Gagal menyimpan data summit untuk "..player.Name..": "..err)
+		end
+	end)
+
+	-- Pasang BillboardGui saat karakter muncul
+	player.CharacterAdded:Connect(function(character)
+		local head = character:WaitForChild("Head")
+
+		-- Hapus dulu kalau ada NameTag lama
+		local oldTag = head:FindFirstChild("NameTag")
+		if oldTag then
+			oldTag:Destroy()
+		end
+
+		-- Buat BillboardGui baru
+		local billboard = Instance.new("BillboardGui")
+		billboard.Name = "NameTag"
+		billboard.Size = UDim2.new(0, 120, 0, 60)  -- ukuran lebih kecil dari 200x100
+		billboard.StudsOffset = Vector3.new(0, 2, 0)  -- offset dikurangi sedikit
+		billboard.AlwaysOnTop = true
+		billboard.Parent = head
+
+		local layout = Instance.new("UIListLayout")
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Parent = billboard
+
+		local function createLabel(order, fontSize)
+			local label = Instance.new("TextLabel")
+			label.Size = UDim2.new(1, 0, 0, fontSize)
+			label.BackgroundTransparency = 1
+			label.TextStrokeTransparency = 0
+			label.Font = Enum.Font.GothamBold
+			label.TextScaled = true
+			label.LayoutOrder = order
+			label.Parent = billboard
+			return label
+		end
+
+		local statusLabel = createLabel(1, 12)  -- ukuran font dikurangi
+		local nameLabel = createLabel(2, 14)    -- ukuran font dikurangi
+		local rankLabel = createLabel(3, 12)    -- ukuran font dikurangi
+		local summitLabel = createLabel(4, 12)  -- ukuran font dikurangi
+
+
+		local function updateText()
+			local rankName, rankColor = getRank(summitStat.Value)
+
+			if player.UserId == ownerId then
+				statusLabel.Text = "OWNER"
+				statusLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+			else
+				statusLabel.Text = ""
+			end
+
+			nameLabel.Text = player.Name
+			nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+			rankLabel.Text = rankName
+			rankLabel.TextColor3 = rankColor
+
+			summitLabel.Text = "Summit: " .. summitStat.Value
+			summitLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		end
+
+		updateText()
+		summitStat:GetPropertyChangedSignal("Value"):Connect(updateText)
+	end)
+end)

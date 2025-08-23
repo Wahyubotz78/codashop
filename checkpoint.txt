@@ -1,0 +1,53 @@
+local part = script.Parent
+local Players = game:GetService("Players")
+
+-- Track status player apakah sudah boleh tambah summit
+local canAddSummit = {}
+
+-- Fungsi ini akan dihubungkan ke SpawnLocation supaya menandai player boleh tambah summit
+local function onSpawnTouched(hit)
+	local player = Players:GetPlayerFromCharacter(hit.Parent)
+	if player then
+		canAddSummit[player] = true
+	end
+end
+
+-- Cari SpawnLocation di workspace
+local spawnLocation = workspace:FindFirstChild("SpawnLocation")
+if spawnLocation then
+	spawnLocation.Touched:Connect(onSpawnTouched)
+else
+	warn("SpawnLocation tidak ditemukan di workspace!")
+end
+
+-- Saat player menyentuh SummitTrigger
+part.Touched:Connect(function(hit)
+	local player = Players:GetPlayerFromCharacter(hit.Parent)
+	if player and canAddSummit[player] then
+		local stats = player:FindFirstChild("leaderstats")
+		if stats then
+			local summit = stats:FindFirstChild("Summit")
+			if summit then
+				summit.Value = summit.Value + 1
+				-- Setelah summit bertambah, set player jadi tidak boleh tambah lagi sampai kembali ke SpawnLocation
+				canAddSummit[player] = false
+			end
+		end
+	end
+end)
+
+-- Saat player masuk/respawn langsung set canAddSummit true supaya bisa lanjut summit
+Players.PlayerAdded:Connect(function(player)
+	-- Default langsung boleh tambah summit walaupun respawn di checkpoint manapun
+	canAddSummit[player] = true
+
+	player.CharacterAdded:Connect(function(character)
+		-- Kalau mau, bisa cek posisi juga tapi di sini langsung set true
+		canAddSummit[player] = true
+	end)
+end)
+
+-- Hapus data player saat keluar supaya gak membebani memori
+Players.PlayerRemoving:Connect(function(player)
+	canAddSummit[player] = nil
+end)
