@@ -1,0 +1,26 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local light = Instance.new("SpotLight")
+light.Brightness = 4 --change the Brightness of the light
+light.Range = 20 -- change the range of the light
+light.Angle = 90 -- change the angle of the light
+light.Enabled = false
+light.Parent = humanoidRootPart
+light.Face = Enum.NormalId.Front
+
+local active = false
+
+local function toggleLight()
+active = not active
+light.Enabled = active
+end
+
+local userInputService = game:GetService("UserInputService")
+userInputService.InputBegan:Connect(function(input, gameProcessed)
+if gameProcessed then return end
+if input.KeyCode == Enum.KeyCode.F then -- change the key to activate the light
+toggleLight()
+end
+end)
